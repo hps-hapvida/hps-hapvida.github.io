@@ -98,6 +98,20 @@
     }
     .btn-limpar:hover { border-color: #6ba3cc; }
 
+    /* ── Histórico ── */
+    .hist-section { background: #d9eaf8; padding: 0 0 56px; }
+    .hist-title { color: #0f3d70; font-size: 1rem; font-weight: 700; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+    .hist-table-wrap { overflow-x: auto; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .hist-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; min-width: 600px; }
+    .hist-table th { background: var(--azul,#1D71B8); color: #fff; padding: 10px 12px; text-align: left; font-size: 11.5px; white-space: nowrap; }
+    .hist-table td { padding: 9px 12px; border-bottom: 1px solid #dde9f3; vertical-align: middle; }
+    .hist-table tr:last-child td { border-bottom: none; }
+    .hist-table tr:hover td { background: #f0f7ff; }
+    .hist-pdf-link { color: var(--azul,#1D71B8); font-weight: 600; text-decoration: none; white-space: nowrap; }
+    .hist-pdf-link:hover { text-decoration: underline; }
+    .hist-empty { text-align: center; color: #888; padding: 32px; background: #fff; border-radius: 10px; }
+    .hist-loading { text-align: center; color: #666; padding: 20px; }
+
     .ac-req { color: #dc2626; margin-left: 1px; }
     .ac-info {
       background: #dbeeff; border: 1px solid #93c5e8; border-radius: 10px;
@@ -329,8 +343,60 @@
     <strong>Centro Cirúrgico · Hospital Paulo Sacramento</strong> · Hapvida NotreDame Intermédica · Intranet HPS
   </footer>
 
+  <section class="hist-section">
+    <div class="ac-wrap">
+      <h2 class="hist-title">📋 Histórico de Avisos Cirúrgicos</h2>
+      <div id="hist-lista"><p class="hist-loading">Carregando histórico…</p></div>
+    </div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
+
+  /* ──────────────── SUPABASE ──────────────── */
+  const _sb = supabase.createClient(
+    'https://zondjpwnhdmhzbclyzok.supabase.co',
+    'sb_publishable_nhpztHDEhPzdyiyZ7SCToA_Kdlr-R4j'
+  );
+
+  async function carregarHistorico() {
+    const el = document.getElementById('hist-lista');
+    el.innerHTML = '<p class="hist-loading">Carregando…</p>';
+    const { data, error } = await _sb
+      .from('avisos_cirurgicos')
+      .select('id,created_at,paciente,convenio,procedimento,medico,data_agendamento,hora,pdf_url')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error || !data?.length) {
+      el.innerHTML = '<p class="hist-empty">Nenhum aviso registrado ainda.</p>';
+      return;
+    }
+    const rows = data.map(r => {
+      const dt = new Date(r.created_at).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      const pdf = r.pdf_url
+        ? `<a class="hist-pdf-link" href="${r.pdf_url}" target="_blank">⬇ PDF</a>`
+        : '—';
+      return `<tr>
+        <td>${dt}</td>
+        <td>${r.paciente || '—'}</td>
+        <td>${r.convenio || '—'}</td>
+        <td>${r.procedimento || '—'}</td>
+        <td>${r.medico || '—'}</td>
+        <td>${r.data_agendamento || '—'} ${r.hora ? 'às ' + r.hora : ''}</td>
+        <td>${pdf}</td>
+      </tr>`;
+    }).join('');
+    el.innerHTML = `<div class="hist-table-wrap"><table class="hist-table">
+      <thead><tr>
+        <th>Emitido em</th><th>Paciente</th><th>Convênio</th>
+        <th>Procedimento</th><th>Médico</th><th>Data CC</th><th>PDF</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  }
+
+  carregarHistorico();
 
   /* ──────────────── TOGGLES ──────────────── */
   document.getElementById('f-sang-chk').addEventListener('change', function() {
@@ -734,10 +800,32 @@
       }
     }
 
-    /* ── Salva ── */
+    /* ── Salva PDF ── */
     const nomePac = pac.replace(/\s+/g,'-').toLowerCase().substring(0,30);
     const dataPdf = (data||'').replace(/\//g,'');
+    const fileName = `aviso-cirurgico_${nomePac}_${dataPdf}_${Date.now()}.pdf`;
     doc.save(`aviso-cirurgico_${nomePac}_${dataPdf}.pdf`);
+
+    /* ── Salva no Supabase ── */
+    try {
+      const pdfBlob = doc.output('blob');
+      const { error: upErr } = await _sb.storage
+        .from('avisos-cirurgicos')
+        .upload(fileName, pdfBlob, { contentType: 'application/pdf' });
+      const pdfUrl = upErr ? null : _sb.storage
+        .from('avisos-cirurgicos')
+        .getPublicUrl(fileName).data.publicUrl;
+      await _sb.from('avisos_cirurgicos').insert({
+        paciente: pac, convenio: conv, procedimento: proc, tuss,
+        medico, data_agendamento: data, hora, sala, tempo,
+        responsavel: resp, anestesia: anest, lateralidade: lat,
+        uti: utiSim, sangue: sangSim, sangue_qtd: sangQtd,
+        sangue_qual: sangQual, opme, equip, pdf_url: pdfUrl
+      });
+      carregarHistorico();
+    } catch(e) {
+      console.warn('Supabase save:', e);
+    }
 
     /* ── WhatsApp automático via Ultramsg ── */
     try {
