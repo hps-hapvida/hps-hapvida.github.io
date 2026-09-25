@@ -97,12 +97,6 @@
       font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
     }
     .btn-limpar:hover { border-color: #6ba3cc; }
-    .btn-whatsapp {
-      background: #25D366; color: #fff; border: none;
-      padding: 10px 20px; border-radius: 6px; font-size: .95rem;
-      font-weight: 600; cursor: pointer; transition: background .2s;
-    }
-    .btn-whatsapp:hover { background: #1ebe5a; }
 
     .ac-req { color: #dc2626; margin-left: 1px; }
     .ac-info {
@@ -327,7 +321,6 @@
 
     <div class="ac-actions">
       <button class="btn-limpar" onclick="limpar()">Limpar formulário</button>
-      <button class="btn-whatsapp" onclick="compartilharWhatsApp()">📱 WhatsApp</button>
       <button class="btn-gerar"  id="btn-gerar" onclick="gerarPDF()">📄 Gerar PDF</button>
     </div>
   </main>
@@ -746,6 +739,34 @@
     const dataPdf = (data||'').replace(/\//g,'');
     doc.save(`aviso-cirurgico_${nomePac}_${dataPdf}.pdf`);
 
+    /* ── WhatsApp ── */
+    {
+      const sangLinha = sangSim
+        ? `✅ SIM — ${sangQtd ? sangQtd + ' bolsa(s)' : ''}${sangQual ? ' (' + sangQual + ')' : ''}`
+        : '❌ NÃO';
+      const utiLinha  = utiSim ? '✅ SIM' : '❌ NÃO';
+      const msg = [
+        '*AVISO CIRÚRGICO — HPS*',
+        `📅 Data: ${data} às ${hora} | Sala: ${sala}`,
+        '',
+        `*Paciente:* ${pac}`,
+        `*Convênio:* ${conv}`,
+        `*Médico:* ${medico}`,
+        `*Procedimento:* ${proc}`,
+        `*Código TUSS:* ${tuss}`,
+        `*Tempo estimado:* ${tempo}`,
+        `*Lateralidade:* ${lat || 'NÃO INFORMADO'}`,
+        `*Anestesia:* ${anest || 'NÃO INFORMADO'}`,
+        `*UTI pós-op:* ${utiLinha}`,
+        `*Reserva de sangue:* ${sangLinha}`,
+        `*OPMES:* ${opme}`,
+        '',
+        `_Responsável: ${resp}_`,
+        '_Gerado via Intranet HPS · Hospital Paulo Sacramento_'
+      ].join('\n');
+      window.open('https://wa.me/5565999415463?text=' + encodeURIComponent(msg), '_blank');
+    }
+
     /* ── Notificação ntfy.sh ── */
     try {
       const emitidoEm = now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
@@ -777,61 +798,6 @@
     btn.disabled = false; btn.textContent = '📄 Gerar PDF';
   }
 
-  function compartilharWhatsApp() {
-    const resp   = gval('f-resp').toUpperCase();
-    const data   = fdt(gval('f-data'));
-    const hora   = gval('f-hora') || 'A SEGUIR';
-    const sala   = gval('f-sala').toUpperCase() || 'A DEFINIR';
-    const tempo  = gval('f-tempo').toUpperCase() || 'A DEFINIR';
-    const medico = gval('f-medico').toUpperCase();
-    const pac    = gval('f-pac').toUpperCase();
-    const conv   = gval('f-conv').toUpperCase();
-    const proc   = gval('f-proc').toUpperCase();
-    const tuss   = gval('f-tuss').toUpperCase();
-    const sangSim = document.getElementById('f-sang-chk').checked;
-    const sangQtd = gval('f-sang-qtd');
-    const sangQual= gval('f-sang-qual').toUpperCase();
-    const utiSim  = document.getElementById('f-uti-chk').checked;
-    const opme    = gval('f-opme').toUpperCase() || 'SEM NECESSIDADE';
-    const lat     = rval('lat') || 'NÃO INFORMADO';
-    const anest   = rval('anest') || 'NÃO INFORMADO';
-
-    if (!resp)   { alert('Informe o profissional responsável.'); return; }
-    if (!data)   { alert('Informe a data de agendamento.'); return; }
-    if (!medico) { alert('Informe o nome e CRM do médico.'); return; }
-    if (!pac)    { alert('Informe o nome do paciente.'); return; }
-    if (!conv)   { alert('Selecione o convênio.'); return; }
-    if (!proc)   { alert('Informe o nome do procedimento.'); return; }
-    if (!tuss)   { alert('Informe o código TUSS do procedimento.'); return; }
-
-    const sangLinha = sangSim
-      ? `✅ SIM — ${sangQtd ? sangQtd + ' bolsa(s)' : ''}${sangQual ? ' (' + sangQual + ')' : ''}`
-      : '❌ NÃO';
-    const utiLinha = utiSim ? '✅ SIM' : '❌ NÃO';
-
-    const linhas = [
-      '*AVISO CIRÚRGICO — HPS*',
-      `📅 Data: ${data} às ${hora} | Sala: ${sala}`,
-      '',
-      `*Paciente:* ${pac}`,
-      `*Convênio:* ${conv}`,
-      `*Médico:* ${medico}`,
-      `*Procedimento:* ${proc}`,
-      `*Código TUSS:* ${tuss}`,
-      `*Tempo estimado:* ${tempo}`,
-      `*Lateralidade:* ${lat}`,
-      `*Anestesia:* ${anest}`,
-      `*UTI pós-op:* ${utiLinha}`,
-      `*Reserva de sangue:* ${sangLinha}`,
-      `*OPMES:* ${opme}`,
-      '',
-      `_Responsável: ${resp}_`,
-      '_Gerado via Intranet HPS · Hospital Paulo Sacramento_'
-    ];
-
-    const msg = linhas.join('\n');
-    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
-  }
   </script>
 </body>
 </html>
