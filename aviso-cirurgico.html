@@ -741,28 +741,15 @@
 
     /* ── WhatsApp automático via Ultramsg ── */
     try {
-      const sangLinha = sangSim
-        ? `SIM - ${sangQtd ? sangQtd + ' bolsa(s)' : ''}${sangQual ? ' (' + sangQual + ')' : ''}`
-        : 'NAO';
-      const utiLinha = utiSim ? 'SIM' : 'NAO';
+      const emitidoAs = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       const waMsg = [
-        '*AVISO CIRÚRGICO — HPS*',
-        `📅 Data: ${data} às ${hora} | Sala: ${sala}`,
-        '',
-        `*Paciente:* ${pac}`,
-        `*Convênio:* ${conv}`,
-        `*Médico:* ${medico}`,
-        `*Procedimento:* ${proc}`,
-        `*TUSS:* ${tuss}`,
-        `*Tempo:* ${tempo}`,
-        `*Lateralidade:* ${lat || 'N/A'}`,
-        `*Anestesia:* ${anest || 'N/A'}`,
-        `*UTI pós-op:* ${utiLinha}`,
-        `*Reserva de sangue:* ${sangLinha}`,
-        `*OPMES:* ${opme}`,
-        '',
-        `_Responsável: ${resp}_`,
-        '_Intranet HPS · Hospital Paulo Sacramento_'
+        '🏥 🔪 *Aviso Cirúrgico - HPS*',
+        `Paciente: ${pac}`,
+        `Convenio: ${conv}`,
+        `Procedimento: ${proc}`,
+        `Medico: ${medico}`,
+        `Data: ${data} as ${hora}`,
+        `Emitido as ${emitidoAs}`
       ].join('\n');
       const body = new URLSearchParams();
       body.append('token', '1l8kkssmimctpl6t');
