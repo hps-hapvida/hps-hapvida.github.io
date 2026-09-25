@@ -339,16 +339,16 @@
     </div>
   </main>
 
-  <footer class="site-footer">
-    <strong>Centro Cirúrgico · Hospital Paulo Sacramento</strong> · Hapvida NotreDame Intermédica · Intranet HPS
-  </footer>
-
-  <section class="hist-section">
+  <section class="hist-section" id="hist-section" style="display:none">
     <div class="ac-wrap">
       <h2 class="hist-title">📋 Histórico de Avisos Cirúrgicos</h2>
       <div id="hist-lista"><p class="hist-loading">Carregando histórico…</p></div>
     </div>
   </section>
+
+  <footer class="site-footer">
+    <strong>Centro Cirúrgico · Hospital Paulo Sacramento</strong> · Hapvida NotreDame Intermédica · Intranet HPS
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -366,8 +366,7 @@
     const { data, error } = await _sb
       .from('avisos_cirurgicos')
       .select('id,created_at,paciente,convenio,procedimento,medico,data_agendamento,hora,pdf_url')
-      .order('created_at', { ascending: false })
-      .limit(50);
+      .order('created_at', { ascending: false });
     if (error || !data?.length) {
       el.innerHTML = '<p class="hist-empty">Nenhum aviso registrado ainda.</p>';
       return;
@@ -396,7 +395,14 @@
     </table></div>`;
   }
 
-  carregarHistorico();
+  /* Exibe histórico somente para admins */
+  (async () => {
+    const { data: { user } } = await _sb.auth.getUser();
+    if (user?.app_metadata?.role === 'admin') {
+      document.getElementById('hist-section').style.display = '';
+      carregarHistorico();
+    }
+  })();
 
   /* ──────────────── TOGGLES ──────────────── */
   document.getElementById('f-sang-chk').addEventListener('change', function() {
