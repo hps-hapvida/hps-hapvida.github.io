@@ -739,38 +739,42 @@
     const dataPdf = (data||'').replace(/\//g,'');
     doc.save(`aviso-cirurgico_${nomePac}_${dataPdf}.pdf`);
 
-    /* ── WhatsApp automático via CallMeBot ── */
+    /* ── WhatsApp automático via Ultramsg ── */
     try {
-      const CALLMEBOT_KEY = 'AGUARDANDO_CHAVE'; // substituir pela chave recebida do CallMeBot
       const sangLinha = sangSim
         ? `SIM - ${sangQtd ? sangQtd + ' bolsa(s)' : ''}${sangQual ? ' (' + sangQual + ')' : ''}`
         : 'NAO';
-      const utiLinha  = utiSim ? 'SIM' : 'NAO';
-      const waMsgLines = [
-        '*AVISO CIRURGICO - HPS*',
-        `Data: ${data} as ${hora} | Sala: ${sala}`,
+      const utiLinha = utiSim ? 'SIM' : 'NAO';
+      const waMsg = [
+        '*AVISO CIRÚRGICO — HPS*',
+        `📅 Data: ${data} às ${hora} | Sala: ${sala}`,
         '',
         `*Paciente:* ${pac}`,
-        `*Convenio:* ${conv}`,
-        `*Medico:* ${medico}`,
+        `*Convênio:* ${conv}`,
+        `*Médico:* ${medico}`,
         `*Procedimento:* ${proc}`,
         `*TUSS:* ${tuss}`,
         `*Tempo:* ${tempo}`,
         `*Lateralidade:* ${lat || 'N/A'}`,
         `*Anestesia:* ${anest || 'N/A'}`,
-        `*UTI:* ${utiLinha}`,
-        `*Sangue:* ${sangLinha}`,
+        `*UTI pós-op:* ${utiLinha}`,
+        `*Reserva de sangue:* ${sangLinha}`,
         `*OPMES:* ${opme}`,
         '',
-        `_Resp: ${resp}_`
-      ];
-      const waMsg = waMsgLines.join('%0A');
-      await fetch(
-        `https://api.callmebot.com/whatsapp.php?phone=5565999415463&text=${encodeURIComponent(waMsgLines.join('\n'))}&apikey=${CALLMEBOT_KEY}`,
-        { mode: 'no-cors' }
-      );
+        `_Responsável: ${resp}_`,
+        '_Intranet HPS · Hospital Paulo Sacramento_'
+      ].join('\n');
+      const body = new URLSearchParams();
+      body.append('token', '1l8kkssmimctpl6t');
+      body.append('to', '5565999415463');
+      body.append('body', waMsg);
+      await fetch('https://api.ultramsg.com/instance192570/messages/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+      });
     } catch(e) {
-      console.warn('WhatsApp CallMeBot:', e);
+      console.warn('WhatsApp Ultramsg:', e);
     }
 
     /* ── Notificação ntfy.sh ── */
