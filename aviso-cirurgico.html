@@ -351,6 +351,9 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/db.js"></script>
+  <script src="assets/js/admin.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
 
@@ -397,7 +400,7 @@
 
   /* Exibe histórico somente para admins */
   (async () => {
-    const { data: { user } } = await _sb.auth.getUser();
+    const user = typeof Auth !== 'undefined' ? await Auth.getUser() : (await _sb.auth.getUser()).data?.user;
     if (user?.app_metadata?.role === 'admin') {
       document.getElementById('hist-section').style.display = '';
       carregarHistorico();
