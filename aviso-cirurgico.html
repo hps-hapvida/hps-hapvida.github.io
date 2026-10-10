@@ -836,7 +836,7 @@
       console.warn('Supabase save:', e);
     }
 
-    /* ── WhatsApp automático via Ultramsg ── */
+    /* ── WhatsApp automático via Z-API ── */
     try {
       const emitidoAs = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       const waMsg = [
@@ -848,17 +848,13 @@
         `Data: ${data} as ${hora}`,
         `Emitido as ${emitidoAs}`
       ].join('\n');
-      const body = new URLSearchParams();
-      body.append('token', '1l8kkssmimctpl6t');
-      body.append('to', '120363427479550306@g.us');
-      body.append('body', waMsg);
-      await fetch('https://api.ultramsg.com/instance192570/messages/chat', {
+      await fetch('https://api.z-api.io/instances/3FA6E246B0C16143575D76B24854304E/token/31BE90DD5872F7A022EA57B0/send-text', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: '120363427479550306@g.us', message: waMsg })
       });
     } catch(e) {
-      console.warn('WhatsApp Ultramsg:', e);
+      console.warn('WhatsApp Z-API:', e);
     }
 
     /* ── Notificação ntfy.sh ── */
